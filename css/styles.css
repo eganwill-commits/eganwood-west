@@ -551,7 +551,6 @@ em { font-style: italic; }
 @media (max-width: 860px) { .stats--dark .stat:nth-child(-n+2) { border-bottom-color: rgba(255,255,255,0.18); } }
 .sisters { position: relative; overflow: hidden; }
 .sisters > .container { position: relative; z-index: 1; }
-.sisters .star-watermark { top: 42%; left: 50%; width: clamp(360px, 46vw, 640px); transform: translate(-50%, -50%); color: #ddd6c8; }
 .sisters .eyebrow::before, .sisters .eyebrow::after { display: none; }
 .sisters__cards { margin-top: clamp(40px, 5vw, 64px); }
 .stories { margin-top: clamp(56px, 7vw, 88px); padding-top: clamp(40px, 5vw, 56px); border-top: 1px solid rgba(255,255,255,0.18); }
@@ -567,3 +566,19 @@ em { font-style: italic; }
 .story-card b { font-family: var(--serif); font-weight: 500; font-size: 17px; color: var(--on-navy); }
 .story-card span { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-navy-muted); }
 @media (max-width: 900px) { .stories__track > .story-card { width: min(360px, 78vw); } }
+
+/* ----- Meet the sisters: Big Sky night ----- */
+.sisters--night { padding-top: clamp(120px, 12vw, 170px); background: linear-gradient(180deg, #0a1024 0%, #111a36 58%, var(--navy) 100%); color: var(--on-navy-soft); }
+.sisters--night .eyebrow { color: var(--gold-soft); }
+.sisters--night .story__body p { color: var(--on-navy-soft); }
+.sisters--night .person { color: var(--ink-soft); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); }
+.sisters--night .story__media { box-shadow: 0 34px 80px rgba(0, 0, 0, 0.55); outline: 1px solid rgba(232, 184, 74, 0.5); outline-offset: 14px; }
+.sisters--night .story__media img { filter: saturate(1.05); }
+.night-sky { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.night-sky .ns-star { fill: #fff; }
+.night-sky .ns-star--warm { fill: #f3dea0; }
+@media (prefers-reduced-motion: no-preference) {
+  .night-sky .ns-star { animation: ns-twinkle 6s ease-in-out infinite; }
+}
+@keyframes ns-twinkle { 0%, 100% { opacity: var(--o, 0.6); } 50% { opacity: calc(var(--o, 0.6) * 0.3); } }
+@media (max-width: 900px) { .sisters--night .story__media { outline-offset: 10px; } }

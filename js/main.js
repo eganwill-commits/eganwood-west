@@ -234,6 +234,50 @@
     requestAnimationFrame(frame);
   })();
 
+  /* ----- Night sky behind "Meet the sisters" -----
+     Draws a star field sized to the section, keeping the bigger stars clear of the photo and copy.
+     Rebuilt on resize. */
+  (function nightSky() {
+    var svg = document.querySelector('[data-night-sky]');
+    if (!svg) return;
+    var section = svg.parentElement;
+    var NS = 'http://www.w3.org/2000/svg';
+    function rand(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function el(name, attrs) { var n = document.createElementNS(NS, name); for (var k in attrs) n.setAttribute(k, attrs[k]); return n; }
+    function build() {
+      var W = section.offsetWidth, H = section.offsetHeight;
+      if (!W || !H) return;
+      var base = section.getBoundingClientRect();
+      var clear = Array.prototype.map.call(section.querySelectorAll('[data-sky-clear]'), function (n) {
+        var r = n.getBoundingClientRect();
+        return { l: r.left - base.left - 16, t: r.top - base.top - 16, r: r.right - base.left + 16, b: r.bottom - base.top + 16 };
+      });
+      function covered(x, y) { return clear.some(function (c) { return x > c.l && x < c.r && y > c.t && y < c.b; }); }
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      var rnd = rand(1903);
+      var count = Math.max(50, Math.min(160, Math.round(W * H / 7000)));
+      var stars = [], tries = 0;
+      while (stars.length < count && tries++ < count * 6) {
+        var x = rnd() * W, y = rnd() * H, r = 0.7 + rnd() * rnd() * 1.9;
+        if (covered(x, y) && r > 1.1) continue;
+        stars.push({ x: x, y: y, r: r, warm: rnd() < 0.25, o: 0.3 + rnd() * 0.6, d: rnd() * 6 });
+      }
+      stars.forEach(function (s) {
+        var c = el('circle', { class: 'ns-star' + (s.warm ? ' ns-star--warm' : ''), cx: s.x.toFixed(1), cy: s.y.toFixed(1), r: s.r.toFixed(2) });
+        c.style.setProperty('--o', s.o.toFixed(2));
+        c.style.animationDelay = s.d.toFixed(1) + 's';
+        svg.appendChild(c);
+      });
+    }
+    var t;
+    function rebuild() { clearTimeout(t); t = setTimeout(build, 120); }
+    window.addEventListener('resize', rebuild);
+    window.addEventListener('load', rebuild);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(rebuild);
+    build();
+  })();
+
   /* ----- Footer year ----- */
   var year = document.querySelector('[data-year]');
   if (year) year.textContent = String(new Date().getFullYear());
