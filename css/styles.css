@@ -227,9 +227,14 @@ em { font-style: italic; }
 .hero__dot[aria-current="true"]::before { background: var(--gold); opacity: 1; transform: scale(1.45); }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Slow drift on the visible photo */
-  .hero__slide img { transform: scale(1.07); transition: transform 9s linear; }
-  .hero__slide.is-active img { transform: scale(1); }
+  /* Slow drift on the visible photo. A keyframe animation (not a transition) so it starts
+     the moment the page lands, on the very first slide, and restarts for each new slide. */
+  @keyframes hero-drift {
+    from { transform: scale(1) translate3d(0, 0, 0); }
+    to   { transform: scale(1.1) translate3d(-1.2%, -1%, 0); }
+  }
+  .hero__slide img { transform-origin: 55% 45%; will-change: transform; }
+  .hero__slide.is-active img { animation: hero-drift 9s linear forwards; }
 }
 @media (max-width: 700px) {
   .hero__caption { display: none; }
