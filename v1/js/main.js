@@ -155,6 +155,29 @@
     reveals.forEach(function (el) { el.classList.add('is-visible'); });
   }
 
+  /* ----- Client stories: scroll one card at a time with the arrows; swipe works natively ----- */
+  (function stories() {
+    var wrap = document.querySelector('[data-stories]');
+    if (!wrap) return;
+    var track = wrap.querySelector('[data-stories-track]');
+    var prev = wrap.querySelector('[data-stories-prev]');
+    var next = wrap.querySelector('[data-stories-next]');
+    function step() {
+      var card = track.firstElementChild;
+      return card ? card.getBoundingClientRect().width + 24 : 300;
+    }
+    function update() {
+      var max = track.scrollWidth - track.clientWidth - 2;
+      prev.disabled = track.scrollLeft <= 2;
+      next.disabled = track.scrollLeft >= max;
+    }
+    prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+    next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+    track.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+
   /* ----- Footer year ----- */
   var year = document.querySelector('[data-year]');
   if (year) year.textContent = String(new Date().getFullYear());
