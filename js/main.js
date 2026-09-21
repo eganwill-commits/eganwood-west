@@ -155,27 +155,83 @@
     reveals.forEach(function (el) { el.classList.add('is-visible'); });
   }
 
-  /* ----- Client stories: scroll one card at a time with the arrows; swipe works natively ----- */
+  /* ----- Client stories: a slow continuous drift, arrows jump a card, drag to scrub ----- */
   (function stories() {
     var wrap = document.querySelector('[data-stories]');
     if (!wrap) return;
     var track = wrap.querySelector('[data-stories-track]');
-    var prev = wrap.querySelector('[data-stories-prev]');
-    var next = wrap.querySelector('[data-stories-next]');
-    function step() {
-      var card = track.firstElementChild;
-      return card ? card.getBoundingClientRect().width + 24 : 300;
+    var cards = Array.prototype.slice.call(track.children);
+    if (cards.length < 2) return;
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var SPEED = 28;        // pixels per second while drifting
+    var GAP = 24;
+
+    // Clone the set once so the row can loop without a visible jump
+    cards.forEach(function (c) { var d = c.cloneNode(true); d.setAttribute('aria-hidden', 'true'); track.appendChild(d); });
+
+    var offset = 0, loopWidth = 0, step = 0, hold = false, dragging = false, last = null;
+    var anim = null;  // {from, to, start, dur}
+
+    function measure() {
+      step = cards[0].getBoundingClientRect().width + GAP;
+      loopWidth = step * cards.length;
     }
-    function update() {
-      var max = track.scrollWidth - track.clientWidth - 2;
-      prev.disabled = track.scrollLeft <= 2;
-      next.disabled = track.scrollLeft >= max;
+    function apply() {
+      offset = ((offset % loopWidth) + loopWidth) % loopWidth;
+      track.style.transform = 'translate3d(' + (-offset) + 'px,0,0)';
     }
-    prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
-    next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
-    track.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    update();
+    function ease(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+    function frame(now) {
+      if (last === null) last = now;
+      var dt = Math.min(64, now - last); last = now;
+      if (anim) {
+        var t = Math.min(1, (now - anim.start) / anim.dur);
+        offset = anim.from + (anim.to - anim.from) * ease(t);
+        if (t === 1) anim = null;
+      } else if (!hold && !dragging && !reduced && !document.hidden) {
+        offset += SPEED * dt / 1000;
+      }
+      apply();
+      requestAnimationFrame(frame);
+    }
+
+    function jump(dir) {
+      // Land on the next card boundary in that direction
+      var base = anim ? anim.to : offset;
+      var target = dir > 0 ? Math.floor(base / step + 1.001) * step : Math.ceil(base / step - 1.001) * step;
+      anim = { from: offset, to: target, start: performance.now(), dur: 550 };
+      pauseBriefly();
+    }
+    var holdTimer;
+    function pauseBriefly() { hold = true; clearTimeout(holdTimer); holdTimer = setTimeout(function () { hold = false; }, 4000); }
+
+    wrap.querySelector('[data-stories-prev]').addEventListener('click', function () { jump(-1); });
+    wrap.querySelector('[data-stories-next]').addEventListener('click', function () { jump(1); });
+    wrap.addEventListener('mouseenter', function () { hold = true; });
+    wrap.addEventListener('mouseleave', function () { hold = false; });
+    wrap.addEventListener('focusin', function () { hold = true; });
+    wrap.addEventListener('focusout', function () { hold = false; });
+
+    // Drag or swipe to scrub
+    var startX = 0, startOffset = 0;
+    track.addEventListener('pointerdown', function (e) {
+      dragging = true; anim = null; startX = e.clientX; startOffset = offset;
+      track.setPointerCapture(e.pointerId);
+    });
+    track.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      offset = startOffset - (e.clientX - startX);
+    });
+    function endDrag() { if (dragging) { dragging = false; pauseBriefly(); } }
+    track.addEventListener('pointerup', endDrag);
+    track.addEventListener('pointercancel', endDrag);
+    track.style.touchAction = 'pan-y';
+    track.style.cursor = 'grab';
+
+    window.addEventListener('resize', measure);
+    measure();
+    requestAnimationFrame(frame);
   })();
 
   /* ----- Footer year ----- */
